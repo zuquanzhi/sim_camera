@@ -4,7 +4,7 @@ namespace sim_camera {
 
 void SimCameraNode::checkMode(const std_msgs::msg::Int32::SharedPtr msg) {
   if (msg->data == lastMode_) {
-    return; // No change in mode, do nothing
+    return; 
   }
 
   switch (msg->data) {
@@ -61,4 +61,4 @@ void SimCameraNode::setParamsForHitFaraway() {
   this->set_parameter(rclcpp::Parameter("contrast", HitFarawayParams_.contrast));
 }
 
-} // namespace sim_camera
+}

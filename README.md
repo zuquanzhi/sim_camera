@@ -205,67 +205,6 @@ ros2 topic pub --once /mode_command std_msgs/msg/Int32 "{data: 2}"
    ros2 launch sim_camera sim_camera.launch.py video_path:=/path/to/video.mp4
    ```
 
-## 🛠️ 工具脚本
-
-### 测试视频生成
-
-```bash
-# 生成彩色测试视频
-python3 scripts/create_test_video.py
-
-# 使用测试视频启动
-ros2 launch sim_camera sim_camera_with_test_video.launch.py
-```
-
-### 模式切换测试
-
-```bash
-# 自动化模式切换测试
-python3 scripts/test_mode_switch.py
-```
-
-## 🔧 故障排除
-
-### 1. "No video path specified!" 错误
-
-**原因**：video_path 参数为空或未正确设置
-
-**解决方案**：
-- 检查 `config/camera_params.yaml` 中的 `video_path` 设置
-- 确保使用正确的启动命令加载配置文件
-- 使用 launch 文件而不是直接运行节点
-
-### 2. 无法加载视频文件
-
-**原因**：文件路径错误或文件不存在
-
-**解决方案**：
-- 检查文件路径是否正确（支持 `package://` 格式）
-- 确认视频文件存在且格式被OpenCV支持
-- 检查文件权限
-
-### 3. 图像发布异常
-
-**原因**：OpenCV或ROS2包缺失
-
-**解决方案**：
-- 重新安装OpenCV：`sudo apt install libopencv-dev`
-- 安装ROS2图像包：`sudo apt install ros-humble-cv-bridge ros-humble-image-transport`
-
-### 4. 参数设置无效
-
-**调试命令**：
-```bash
-# 查看可用参数
-ros2 param list
-
-# 检查参数值
-ros2 param get /sim_camera video_path
-
-# 查看节点状态
-ros2 node info /sim_camera
-```
-
 ## 📊 与原包对比
 
 | 特性 | rm_camdrv | sim_camera | 兼容性 |

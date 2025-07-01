@@ -30,9 +30,6 @@ SimCameraNode::SimCameraNode(const rclcpp::NodeOptions &options)
 
   declareParameters();
 
-  // Load video file
-  // First try to get video_path from parameter (without declaring with default value)
-  // If not set, declare it with empty string to allow config file value to be used
   if (!this->has_parameter("video_path")) {
     this->declare_parameter("video_path", std::string(""));
   }
@@ -43,7 +40,6 @@ SimCameraNode::SimCameraNode(const rclcpp::NodeOptions &options)
     return;
   }
 
-  // Resolve package:// paths
   std::string resolved_path = resolvePackagePath(video_path_);
   RCLCPP_INFO(this->get_logger(), "Resolved video path: '%s'", resolved_path.c_str());
 
@@ -55,12 +51,10 @@ SimCameraNode::SimCameraNode(const rclcpp::NodeOptions &options)
   params_callback_handle_ = this->add_on_set_parameters_callback(
       std::bind(&SimCameraNode::parametersCallback, this, std::placeholders::_1));
 
-  // Handle mode switch
   readpack_sub_ = this->create_subscription<std_msgs::msg::Int32>(
       "/mode_command", 1,
       std::bind(&SimCameraNode::checkMode, this, std::placeholders::_1));
 
-  // Start capture thread
   running_ = true;
   capture_thread_ = std::thread(&SimCameraNode::captureLoop, this);
 
@@ -81,7 +75,6 @@ SimCameraNode::~SimCameraNode() {
 void SimCameraNode::declareParameters() {
   rcl_interfaces::msg::ParameterDescriptor param_desc;
 
-  // Video parameters
   param_desc.description = "Frames per second";
   current_fps_ = this->declare_parameter("fps", 30.0, param_desc);
 
@@ -100,28 +93,24 @@ void SimCameraNode::declareParameters() {
   param_desc.description = "Loop video when it ends";
   loop_video_ = this->declare_parameter("loop_video", true, param_desc);
 
-  // Mode parameters - Aimbot
   AimbotParams_.fps = this->declare_parameter("Aimbot.fps", 60.0);
   AimbotParams_.width = this->declare_parameter("Aimbot.width", 640);
   AimbotParams_.height = this->declare_parameter("Aimbot.height", 480);
   AimbotParams_.brightness = this->declare_parameter("Aimbot.brightness", 0.0);
   AimbotParams_.contrast = this->declare_parameter("Aimbot.contrast", 1.2);
 
-  // Mode parameters - Rune
   RuneParams_.fps = this->declare_parameter("Rune.fps", 30.0);
   RuneParams_.width = this->declare_parameter("Rune.width", 640);
   RuneParams_.height = this->declare_parameter("Rune.height", 480);
   RuneParams_.brightness = this->declare_parameter("Rune.brightness", 0.1);
   RuneParams_.contrast = this->declare_parameter("Rune.contrast", 1.0);
 
-  // Mode parameters - Outpost
   OutpostParams_.fps = this->declare_parameter("Outpost.fps", 45.0);
   OutpostParams_.width = this->declare_parameter("Outpost.width", 800);
   OutpostParams_.height = this->declare_parameter("Outpost.height", 600);
   OutpostParams_.brightness = this->declare_parameter("Outpost.brightness", 0.0);
   OutpostParams_.contrast = this->declare_parameter("Outpost.contrast", 1.1);
 
-  // Mode parameters - HitFaraway
   HitFarawayParams_.fps = this->declare_parameter("HitFaraway.fps", 60.0);
   HitFarawayParams_.width = this->declare_parameter("HitFaraway.width", 1280);
   HitFarawayParams_.height = this->declare_parameter("HitFaraway.height", 720);
@@ -182,12 +171,10 @@ bool SimCameraNode::loadVideo(const std::string& video_path) {
 cv::Mat SimCameraNode::preprocessFrame(const cv::Mat& frame) {
   cv::Mat processed_frame = frame.clone();
   
-  // Resize if needed
   if (processed_frame.cols != current_width_ || processed_frame.rows != current_height_) {
     cv::resize(processed_frame, processed_frame, cv::Size(current_width_, current_height_));
   }
   
-  // Apply brightness and contrast
   if (current_brightness_ != 0.0 || current_contrast_ != 1.0) {
     processed_frame.convertTo(processed_frame, -1, current_contrast_, current_brightness_ * 255);
   }
@@ -215,7 +202,7 @@ void SimCameraNode::captureLoop() {
       
       if (frame.empty()) {
         if (loop_video_) {
-          // Reset to beginning of video
+
           video_cap_.set(cv::CAP_PROP_POS_FRAMES, 0);
           RCLCPP_INFO(this->get_logger(), "Looping video");
           continue;
@@ -226,10 +213,8 @@ void SimCameraNode::captureLoop() {
       }
     }
     
-    // Preprocess frame
     cv::Mat processed_frame = preprocessFrame(frame);
     
-    // Convert to ROS message
     auto cv_image = cv_bridge::CvImage();
     cv_image.header.stamp = this->now();
     cv_image.header.frame_id = "camera_optical_frame";
@@ -238,15 +223,12 @@ void SimCameraNode::captureLoop() {
     
     image_msg_ = *cv_image.toImageMsg();
     
-    // Update camera info
     camera_info_msg_.header = image_msg_.header;
     camera_info_msg_.width = current_width_;
     camera_info_msg_.height = current_height_;
     
-    // Publish
     camera_pub_.publish(image_msg_, camera_info_msg_);
     
-    // Calculate sleep time based on current FPS
     if (current_fps_ > 0) {
       auto frame_duration = std::chrono::duration<double>(1.0 / current_fps_);
       auto loop_end = std::chrono::steady_clock::now();
@@ -263,10 +245,8 @@ void SimCameraNode::captureLoop() {
 }
 
 std::string SimCameraNode::resolvePackagePath(const std::string& path) {
-  // Check if path starts with "package://"
   const std::string package_prefix = "package://";
   if (path.substr(0, package_prefix.length()) == package_prefix) {
-    // Extract package name and relative path
     std::string remaining = path.substr(package_prefix.length());
     size_t slash_pos = remaining.find('/');
     
@@ -279,16 +259,15 @@ std::string SimCameraNode::resolvePackagePath(const std::string& path) {
         return package_share_dir + "/" + relative_path;
       } catch (const std::exception& e) {
         RCLCPP_ERROR(this->get_logger(), "Failed to resolve package path '%s': %s", path.c_str(), e.what());
-        return path;  // Return original path as fallback
+        return path;
       }
     }
   }
   
-  // Return original path if not a package:// path
   return path;
 }
 
-} // namespace sim_camera
+}
 
 #include "rclcpp_components/register_node_macro.hpp"
 

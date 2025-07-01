@@ -2,7 +2,7 @@
   ros__parameters:
     camera_name: sim_camera
     
-    # Video file path (required)
+    # Video file path 
     video_path: "package://sim_camera/videos/Movie_002.avi"
     
     # Basic camera parameters

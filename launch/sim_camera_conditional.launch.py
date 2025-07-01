@@ -15,16 +15,13 @@ def launch_setup(context):
 
     camera_info_url = 'package://sim_camera/config/camera_info.yaml'
     
-    # Get video_path from launch arguments
     video_path_value = LaunchConfiguration('video_path').perform(context)
     
-    # Base parameters that are always included
     base_params = {
         'camera_info_url': LaunchConfiguration('camera_info_url'),
         'use_sensor_data_qos': LaunchConfiguration('use_sensor_data_qos'),
     }
     
-    # Only add video_path if it's not empty (user explicitly specified it)
     if video_path_value and video_path_value.strip():
         base_params['video_path'] = LaunchConfiguration('video_path')
     
