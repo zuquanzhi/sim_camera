@@ -1,0 +1,88 @@
+# ROS2 Build and Install Files
+build/
+install/
+log/
+
+# Compiled Object files
+*.o
+*.obj
+*.so
+*.dylib
+*.dll
+
+# Compiled Dynamic libraries
+*.so.*
+*.dylib
+
+# Compiled Static libraries
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+CTestConfiguration.ini
+CTestCustom.cmake
+CTestTestfile.cmake
+install_manifest.txt
+Makefile
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+.pytest_cache/
+
+# IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Large video files (optional - uncomment if you don't want to track large videos)
+# videos/*.mp4
+# videos/*.avi
+# videos/*.mov
+# videos/*.mkv
+
+# Logs and debug files
+*.log
+*.out
+*.err
+
+# Colcon specific
+COLCON_IGNORE
+
+# ROS specific
+devel/
+*.orig
+*.rej
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+*.7z

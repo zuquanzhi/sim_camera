@@ -1,0 +1,43 @@
+/sim_camera:
+  ros__parameters:
+    camera_name: sim_camera
+    
+    # Video file path (required)
+    video_path: "package://sim_camera/videos/Movie_002.avi"
+    
+    # Basic camera parameters
+    fps: 30.0
+    width: 640
+    height: 480
+    brightness: 0.0  # -1.0 to 1.0
+    contrast: 1.0    # 0.0 to 3.0
+    loop_video: true
+    
+    # Mode-specific parameters
+    Aimbot:
+      fps: 60.0
+      width: 640
+      height: 480
+      brightness: 0.0
+      contrast: 1.2
+
+    Rune:
+      fps: 30.0
+      width: 640
+      height: 480
+      brightness: 0.1
+      contrast: 1.0
+    
+    Outpost:
+      fps: 45.0
+      width: 800
+      height: 600
+      brightness: 0.0
+      contrast: 1.1
+    
+    HitFaraway:
+      fps: 60.0
+      width: 1280
+      height: 720
+      brightness: 0.0
+      contrast: 1.3
