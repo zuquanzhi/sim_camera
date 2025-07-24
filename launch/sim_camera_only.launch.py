@@ -27,7 +27,7 @@ def generate_launch_description():
         description='Path to camera info file'
     )
     
-    # 假相机节点
+    # 只启动假相机节点
     sim_camera_node = Node(
         package='sim_camera',
         executable='sim_camera_node',
@@ -68,20 +68,8 @@ def generate_launch_description():
         output='screen'
     )
     
-    # 键盘控制器节点
-    # 移除xterm前缀，直接在当前终端运行
-    # 用户需要在支持键盘输入的终端中运行此启动文件
-    keyboard_controller_node = Node(
-        package='sim_camera',
-        executable='sim_camera_keyboard_main',
-        name='keyboard_controller',
-        output='screen'
-        # prefix='xterm -e'  # 在新终端窗口中运行以便键盘输入
-    )
-    
     return LaunchDescription([
         declare_video_path,
         declare_camera_info_url,
         sim_camera_node,
-        keyboard_controller_node,
     ])
