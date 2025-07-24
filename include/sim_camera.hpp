@@ -31,6 +31,13 @@ enum CAMMOD {
   DYNAMIC_HIT_OUTPOST = 5,
 
   HIT_FARAWAY = 6,
+
+  // Video playback controls
+  FAST_FORWARD = 10,     // 快进
+  SLOW_SPEED = 11,       // 慢速（0.3倍速）
+  REVERSE = 12,          // 倒退
+  NORMAL_PLAY = 13,      // 正常播放
+  PAUSE = 14,            // 暂停
 };
 
 class SimCameraNode : public rclcpp::Node {
@@ -57,6 +64,15 @@ private:
   void setParamsForRune();
   void setParamsForOutpost();
   void setParamsForHitFaraway();
+  
+  // Video playback control functions
+  void handlePlaybackControl(int control_mode);
+  void setFastForward();
+  void setSlowSpeed();
+  void setReverse();
+  void setNormalPlay();
+  void setPause();
+  
   int lastMode_ = CAMMOD::UNINITIALIZED;
 
   void captureLoop();
@@ -85,6 +101,21 @@ private:
   double current_brightness_;
   double current_contrast_;
   bool loop_video_;
+  
+  // Video playback control parameters
+  enum PlaybackState {
+    NORMAL,
+    FAST_FORWARD_STATE,
+    SLOW_SPEED_STATE,
+    REVERSE_STATE,
+    PAUSED
+  };
+  PlaybackState playback_state_;
+  double playback_speed_multiplier_;  // 播放速度倍数
+  int frame_skip_;                    // 跳帧数量
+  bool reverse_playback_;             // 是否倒放
+  int current_frame_pos_;             // 当前帧位置
+  int total_frames_;                  // 总帧数
 
   OnSetParametersCallbackHandle::SharedPtr params_callback_handle_;
 };

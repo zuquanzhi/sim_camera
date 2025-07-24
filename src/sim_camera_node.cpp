@@ -48,6 +48,19 @@ SimCameraNode::SimCameraNode(const rclcpp::NodeOptions &options)
     return;
   }
 
+  // Initialize playback control variables
+  playback_state_ = NORMAL;
+  playback_speed_multiplier_ = 1.0;
+  frame_skip_ = 0;
+  reverse_playback_ = false;
+  current_frame_pos_ = 0;
+  
+  // Get total frame count
+  if (video_cap_.isOpened()) {
+    total_frames_ = static_cast<int>(video_cap_.get(cv::CAP_PROP_FRAME_COUNT));
+    RCLCPP_INFO(this->get_logger(), "Total frames in video: %d", total_frames_);
+  }
+
   params_callback_handle_ = this->add_on_set_parameters_callback(
       std::bind(&SimCameraNode::parametersCallback, this, std::placeholders::_1));
 
@@ -164,6 +177,14 @@ bool SimCameraNode::loadVideo(const std::string& video_path) {
     return false;
   }
   
+  // Reset playback state
+  playback_state_ = NORMAL;
+  playback_speed_multiplier_ = 1.0;
+  frame_skip_ = 0;
+  reverse_playback_ = false;
+  current_frame_pos_ = 0;
+  total_frames_ = static_cast<int>(video_cap_.get(cv::CAP_PROP_FRAME_COUNT));
+  
   RCLCPP_INFO(this->get_logger(), "Successfully loaded video: %s", video_path.c_str());
   return true;
 }
@@ -198,18 +219,66 @@ void SimCameraNode::captureLoop() {
         continue;
       }
       
+      // Handle pause state
+      if (playback_state_ == PAUSED) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        continue;
+      }
+      
+      // Handle reverse playback
+      if (reverse_playback_) {
+        current_frame_pos_--;
+        if (current_frame_pos_ < 0) {
+          if (loop_video_) {
+            current_frame_pos_ = total_frames_ - 1;
+            RCLCPP_INFO(this->get_logger(), "Reverse looping video");
+          } else {
+            RCLCPP_WARN(this->get_logger(), "Reached beginning of video in reverse mode");
+            break;
+          }
+        }
+        video_cap_.set(cv::CAP_PROP_POS_FRAMES, current_frame_pos_);
+      } else {
+        // Handle forward playback with frame skipping
+        if (frame_skip_ > 0) {
+          current_frame_pos_ += frame_skip_;
+          if (current_frame_pos_ >= total_frames_) {
+            if (loop_video_) {
+              current_frame_pos_ = 0;
+              RCLCPP_INFO(this->get_logger(), "Looping video");
+            } else {
+              RCLCPP_WARN(this->get_logger(), "End of video reached");
+              break;
+            }
+          }
+          video_cap_.set(cv::CAP_PROP_POS_FRAMES, current_frame_pos_);
+        } else {
+          current_frame_pos_ = static_cast<int>(video_cap_.get(cv::CAP_PROP_POS_FRAMES));
+        }
+      }
+      
       video_cap_ >> frame;
       
       if (frame.empty()) {
         if (loop_video_) {
-
-          video_cap_.set(cv::CAP_PROP_POS_FRAMES, 0);
+          if (reverse_playback_) {
+            current_frame_pos_ = total_frames_ - 1;
+            video_cap_.set(cv::CAP_PROP_POS_FRAMES, current_frame_pos_);
+          } else {
+            current_frame_pos_ = 0;
+            video_cap_.set(cv::CAP_PROP_POS_FRAMES, 0);
+          }
           RCLCPP_INFO(this->get_logger(), "Looping video");
           continue;
         } else {
           RCLCPP_WARN(this->get_logger(), "End of video reached");
           break;
         }
+      }
+      
+      // Update current frame position for normal playback
+      if (!reverse_playback_ && frame_skip_ == 0) {
+        current_frame_pos_ = static_cast<int>(video_cap_.get(cv::CAP_PROP_POS_FRAMES));
       }
     }
     
@@ -229,8 +298,10 @@ void SimCameraNode::captureLoop() {
     
     camera_pub_.publish(image_msg_, camera_info_msg_);
     
+    // Adjust sleep time based on playback speed
     if (current_fps_ > 0) {
-      auto frame_duration = std::chrono::duration<double>(1.0 / current_fps_);
+      double effective_fps = current_fps_ * playback_speed_multiplier_;
+      auto frame_duration = std::chrono::duration<double>(1.0 / effective_fps);
       auto loop_end = std::chrono::steady_clock::now();
       auto elapsed = loop_end - loop_start;
       auto sleep_time = frame_duration - elapsed;

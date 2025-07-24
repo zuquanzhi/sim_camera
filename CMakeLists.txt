@@ -29,6 +29,26 @@ rclcpp_components_register_node(${PROJECT_NAME}
   EXECUTABLE ${PROJECT_NAME}_node
 )
 
+# Add keyboard controller library
+ament_auto_add_library(${PROJECT_NAME}_keyboard SHARED
+  src/keyboard_controller.cpp
+)
+
+target_include_directories(${PROJECT_NAME}_keyboard PUBLIC include/)
+
+rclcpp_components_register_node(${PROJECT_NAME}_keyboard
+  PLUGIN sim_camera::KeyboardController
+  EXECUTABLE ${PROJECT_NAME}_keyboard_node
+)
+
+# Add standalone keyboard controller executable
+ament_auto_add_executable(${PROJECT_NAME}_keyboard_main
+  src/keyboard_controller_main.cpp
+  src/keyboard_controller.cpp
+)
+
+target_include_directories(${PROJECT_NAME}_keyboard_main PUBLIC include/)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   list(APPEND AMENT_LINT_AUTO_EXCLUDE
